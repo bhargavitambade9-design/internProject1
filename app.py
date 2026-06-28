@@ -1,25 +1,37 @@
-#streamlit run app.py
 import streamlit as st
-import pickle as pkl
 import numpy as np
 import pandas as pd
+import pickle
 
-st.title("Car Price Predictor")
+st.title("Car Price Prediction App")
+df = pd.read_csv("final_data.csv")
+model = pickle.load(open("cpp.pkl", "rb"))
 
-company = st.text_input("Enter company")
-name = st.text_input("Enter car name")
-year = st.number_input("Enter year", min_value=2000, max_value=2024, 
-                       step=1)
-kms_driven = st.number_input("Enter kilometers driven", 
-                             min_value=10000, max_value=400000, 
-                             step = 5000)
-fuel_type = st.selectbox("Select fuel type", ["Petrol", "Diesel", "LPG"])
+companies = sorted(df['company'].unique())
+company = st.sidebar.selectbox("Select company", companies)
 
-if st.button("Predict Price"):
-    model = pkl.load(open("model.pkl", "rb+"))
-    data = [[company, name, year, kms_driven, fuel_type]]
+names = sorted(df[df['company'] == company]['name'].unique())
+
+name = st.sidebar.selectbox("Select name", names)
+year = st.sidebar.number_input("Enter year", min_value = 2000, max_value = 2026, step = 1)
+km_driven = st.sidebar.number_input("Enter km driven", value = 50000, min_value = 1000, max_value = 200000, step = 5000)
+fuel_type = st.sidebar.selectbox("Select fuel type", ["Petrol", "Diesel"])
+
+if st.sidebar.button("Predict Price"):
+    st.write("Predicting for")
+    st.write("Company: ", company)
+    st.write("Name: ", name)
+    st.write("Year: ", str(year))
+    st.write("KM Driven: ", str(km_driven))
+    st.write("Fuel Type: ", fuel_type)
+
     columns = ['company', 'name', 'year', 'kms_driven', 'fuel_type']
-    df = pd.DataFrame(data, columns=columns)
-    st.write(df)
-    result = model.predict(df)
-    st.write("Predicted price:", round(result[0,0]))
+    myinput = [[company, name, year, km_driven, fuel_type]]
+    myinput = pd.DataFrame(data = myinput, columns = columns)
+    #st.write(myinput)
+    result = model.predict(myinput)
+    if result[0,0] < 0:
+        st.error("Sorry, inputs are wrong.")
+    else:
+        st.success("Predicted Price:" + str(round(result[0,0])))
+
